@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>농사일지 - 스마트 농업 관리</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/dexie@3.2.2/dist/dexie.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-seedling"></i>
+                <span>농사일지</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#dashboard" class="nav-link active">대시보드</a></li>
+                <li><a href="#crops" class="nav-link">작물관리</a></li>
+                <li><a href="#diary" class="nav-link">일지작성</a></li>
+                <li><a href="#statistics" class="nav-link">통계</a></li>
+                <li><a href="#datamanage" class="nav-link">데이터 관리</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- 대시보드 섹션 -->
+        <section id="dashboard" class="section active">
+            <div class="container">
+                <h1>오늘의 농장 현황</h1>
+                <div class="dashboard-grid">
+                    <div class="card weather-card">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.7rem; margin-bottom:1.2rem;">
+                            <h3 style="margin-bottom:0;"> <i class="fas fa-cloud-sun"></i> 오늘 날씨</h3>
+                            <select id="weatherStation" style="font-size:1rem; padding:0.2rem 0.7rem; border-radius:8px;">
+                                <option value="236">서천</option>
+                                <option value="235">부여</option>
+                                <option value="133">대전</option>
+                                <option value="108">서울</option>
+                            </select>
+                        </div>
+                        <div class="weather-info" style="text-align:center;"></div>
+                    </div>
+                    
+                    <div class="card tasks-card">
+                        <h3><i class="fas fa-tasks"></i> 오늘 할 일</h3>
+                        <div class="task-input-container">
+                            <input type="text" id="newTaskInput" placeholder="새 할 일 추가..." maxlength="50">
+                            <button type="button" class="btn btn-small" onclick="addNewTask()"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <ul class="task-list" id="taskList">
+                            <!-- 할 일 목록이 동적으로 추가됩니다 -->
+                        </ul>
+                    </div>
+                    
+                    <div class="card crops-summary">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.7rem; margin-bottom:1.2rem;">
+                            <h3 style="margin-bottom:0;"><i class="fas fa-leaf"></i> 작물 현황</h3>
+                            <select id="cropYearSelect" style="font-size:1rem; padding:0.2rem 0.7rem; border-radius:8px;"></select>
+                        </div>
+                        <div class="crop-stats" style="flex-wrap:nowrap; gap:1.5rem;">
+                            <div class="stat">
+                                <span class="number">5</span>
+                                <span class="label">재배 중인 작물</span>
+                            </div>
+                            <div class="stat">
+                                <span class="number">12</span>
+                                <span class="label">수확 예정일</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card recent-activity">
+                        <h3><i class="fas fa-history"></i> 최근 활동</h3>
+                        <ul class="activity-list">
+                            <li>2024-01-15: 토마토 파종</li>
+                            <li>2024-01-14: 상추 수확 2kg</li>
+                            <li>2024-01-13: 비료 살포</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 작물관리 섹션 -->
+        <section id="crops" class="section">
+            <div class="container">
+                <div class="section-header" style="display:flex; align-items:center; justify-content:space-between; gap:0.7rem;">
+                    <h1 style="margin-bottom:0;">작물 관리</h1>
+                    <div style="display:flex; align-items:center; gap:0.7rem;">
+                        <select id="cropsManageYearSelect" style="font-size:0.95rem; padding:0.15rem 0.5rem; border-radius:8px;"></select>
+                        <button class="btn btn-primary" onclick="showAddCropModal()">새 작물 추가</button>
+                    </div>
+                </div>
+                
+                <div class="crops-grid" id="cropsGrid">
+                    <!-- 작물 카드들이 동적으로 추가됩니다 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 일지작성 섹션 -->
+        <section id="diary" class="section">
+            <div class="container">
+                <h1>농사 일지 작성</h1>
+                <div class="diary-form-container">
+                    <form id="diaryForm" class="diary-form">
+                        <input type="hidden" id="diaryIdHidden">
+                        <div class="form-group">
+                            <label for="diaryDate">날짜</label>
+                            <input type="date" id="diaryDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="weather">날씨</label>
+                            <select id="weather" required>
+                                <option value="">선택하세요</option>
+                                <option value="맑음">맑음</option>
+                                <option value="흐림">흐림</option>
+                                <option value="비">비</option>
+                                <option value="눈">눈</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="temperature">온도 (°C)</label>
+                            <input type="number" id="temperature" placeholder="예: 23">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="workType">작업 종류</label>
+                            <select id="workType" required>
+                                <option value="">선택하세요</option>
+                                <option value="파종">파종</option>
+                                <option value="물주기">물주기</option>
+                                <option value="비료">비료</option>
+                                <option value="수확">수확</option>
+                                <option value="방제">방제</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="cropSelect">작물</label>
+                            <select id="cropSelect">
+                                <option value="">선택하세요</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="harvestAmount">수확량 (kg)</label>
+                            <input type="number" id="harvestAmount" step="0.1" placeholder="수확한 경우에만 입력">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="workDescription">작업 내용</label>
+                            <textarea id="workDescription" rows="8" placeholder="오늘 한 농작업에 대해 자세히 기록해주세요..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" id="saveDiaryButton">일지 저장</button>
+                    </form>
+                </div>
+                
+                <div class="diary-history">
+                    <h2>최근 일지</h2>
+                    <div id="diaryHistory" class="diary-list">
+                        <!-- 일지 목록이 동적으로 추가됩니다 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 통계 섹션 -->
+        <section id="statistics" class="section">
+            <div class="container">
+                <h1>농장 통계</h1>
+                <div class="stats-grid">
+                    <div class="card">
+                        <h3>월별 수확량</h3>
+                        <canvas id="harvestChart" width="400" height="200"></canvas>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>작물별 수확 현황</h3>
+                        <canvas id="cropChart" width="400" height="200"></canvas>
+                    </div>
+                    
+                    <div class="card stats-summary">
+                        <h3>전체 통계</h3>
+                        <div class="stat-item">
+                            <span class="stat-label">총 수확량:</span>
+                            <span class="stat-value" id="totalHarvest">0 kg</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">등록된 작물:</span>
+                            <span class="stat-value" id="totalCrops">0 개</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">작성된 일지:</span>
+                            <span class="stat-value" id="totalDiaries">0 개</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 데이터 관리 섹션 -->
+        <section id="datamanage" class="section">
+            <div class="container">
+                <h1>데이터 관리</h1>
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin:3rem 0 1.5rem 0; gap:1.5rem;">
+                    <div>
+                        <button id="exportBtn" class="btn btn-secondary" style="margin-right:1rem;">데이터 내보내기</button>
+                        <label for="importFile" class="btn btn-primary" style="cursor:pointer;">
+                            데이터 복원(Import)
+                            <input type="file" id="importFile" accept="application/json" style="display:none;">
+                        </label>
+                    </div>
+                    <p style="color:#666; font-size:1.05rem; margin-top:1.5rem; text-align:center;">데이터를 백업하거나, 내보낸 파일로 복원할 수 있습니다.</p>
+                    <div style="margin-top:2.5rem; text-align:center;">
+                        <h2 style="font-size:1.2rem; color:#22304a; margin-bottom:1rem;">데이터 초기화</h2>
+                        <button id="resetAllBtn" class="btn btn-secondary" style="margin:0.5rem;">전체 초기화</button>
+                        <button id="resetCropsBtn" class="btn btn-secondary" style="margin:0.5rem;">작물 초기화</button>
+                        <button id="resetDiariesBtn" class="btn btn-secondary" style="margin:0.5rem;">일지 초기화</button>
+                        <button id="resetTasksBtn" class="btn btn-secondary" style="margin:0.5rem;">할일 초기화</button>
+                        <p style="color:#888; font-size:0.98rem; margin-top:1rem;">초기화 시 해당 데이터가 모두 삭제됩니다. 신중히 사용하세요.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 작물 추가 모달 -->
+    <div id="addCropModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>새 작물 추가</h2>
+                <span class="close" onclick="closeAddCropModal()">&times;</span>
+            </div>
+            <form id="addCropForm">
+                <input type="hidden" id="cropIdHidden">
+                <div class="form-group">
+                    <label for="cropName">작물명</label>
+                    <input type="text" id="cropName" required placeholder="예: 토마토">
+                </div>
+                
+                <div class="form-group">
+                    <label for="plantDate">파종일</label>
+                    <input type="date" id="plantDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="expectedHarvest">수확 예정일</label>
+                    <input type="date" id="expectedHarvest">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cropNotes">메모</label>
+                    <textarea id="cropNotes" rows="3" placeholder="품종, 특이사항 등을 기록하세요..."></textarea>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddCropModal()">취소</button>
+                    <button type="submit" class="btn btn-primary" id="saveCropButton">추가</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
